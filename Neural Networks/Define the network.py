@@ -150,18 +150,33 @@ print(net.conv1.bias.grad)
 ## Updating the weights of the network
 
 # UPDATE THE WEIGHTS :
-## The simples update rule in practice is the Stochastic Gradient Descent (SGD) :
+## The simplest update rule in practice is the Stochastic Gradient Descent (SGD) :
 ## weight = weight - learning_rate * gradient
 learning_rate = 0.01
 for f in net.parameters():
     f.data.sub_(f.grad.data * learning_rate)
 
+# However, as you use neural networks, you want to use various
+# different update rules such as SGD, Nesterov-SGD, Adam, RMSProp,
+# etc. To enable this, we built a small package: torch.optim that
+# implements all these methods. Using it is very simple:
 
+import torch.optim as optim
 
+# Creating our optimizer
+optimizer = optim.SGD(net.parameters(), lr=0.01)
 
+# In the training loop
+optimizer.zero_grad()
+output = net(input)
+loss = criterion(output, target)
+loss.backward()
+optimizer.step()                # Does the update
 
-
-
+# NOTE :
+# Observe how gradient buffers had to be manually set to zero using optimizer.zero_grad().
+# This is because gradients are accumulated in existing gradient buffers.
+##################################################
 
 
 
