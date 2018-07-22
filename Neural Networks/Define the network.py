@@ -19,45 +19,45 @@ class Net(nn.Module):
         self.fc3 = nn.Linear(84, 10)
 
     def forward(self, x):
-        Max pooling over a (2,2) window
-        x = F.max_pool2d(F.relu(self.conv1(x)), (2,2))
-        print('x : ', x.size())
-        # If the size is a square you can only specify a single number
-        x = F.max_pool2d(F.relu(self.conv2(x)), 2)
-        print('x : ', x.size())
-        x = x.view(-1, self.num_flat_features(x))
-        print('x : ', x.size())
-        x = F.relu(self.fc1(x))
-        print('x : ', x.size())
-        x = F.relu(self.fc2(x))
-        print('x : ', x.size())
-        x = self.fc3(x)
-        print('x : ', x.size())
-        # x = self.conv1(x)
-        # print('x : ', x.size())
-        # x = F.relu(x)
-        # print('x : ', x.size())
-        # x = F.max_pool2d(x, (2,2))
+        # Max pooling over a (2,2) window
+        # x = F.max_pool2d(F.relu(self.conv1(x)), (2,2))
         # print('x : ', x.size())
         # # If the size is a square you can only specify a single number
-        # x = self.conv2(x)
-        # print('x : ', x.size())
-        # x = F.relu(x)
-        # print('x : ', x.size())
-        # x = F.max_pool2d(x, 2)
+        # x = F.max_pool2d(F.relu(self.conv2(x)), 2)
         # print('x : ', x.size())
         # x = x.view(-1, self.num_flat_features(x))
         # print('x : ', x.size())
-        # x = self.fc1(x)
+        # x = F.relu(self.fc1(x))
         # print('x : ', x.size())
-        # x = F.relu(x)
-        # print('x : ', x.size())
-        # x = self.fc2(x)
-        # print('x : ', x.size())
-        # x = F.relu(x)
+        # x = F.relu(self.fc2(x))
         # print('x : ', x.size())
         # x = self.fc3(x)
         # print('x : ', x.size())
+        x = self.conv1(x)
+        print('x : ', x.size())
+        x = F.relu(x)
+        print('x : ', x.size())
+        x = F.max_pool2d(x, (2,2))
+        print('x : ', x.size())
+        # If the size is a square you can only specify a single number
+        x = self.conv2(x)
+        print('x : ', x.size())
+        x = F.relu(x)
+        print('x : ', x.size())
+        x = F.max_pool2d(x, 2)
+        print('x : ', x.size())
+        x = x.view(-1, self.num_flat_features(x))
+        print('x : ', x.size())
+        x = self.fc1(x)
+        print('x : ', x.size())
+        x = F.relu(x)
+        print('x : ', x.size())
+        x = self.fc2(x)
+        print('x : ', x.size())
+        x = F.relu(x)
+        print('x : ', x.size())
+        x = self.fc3(x)
+        print('x : ', x.size())
 
         return x
 
@@ -95,9 +95,66 @@ input = torch.randn(1,1,32,32)
 out = net(input)
 print(out)
 
+###############################################
+# Now zero the gradient buffers of all parameters and backprops with random gradients :
+net.zero_grad()
+out.backward(torch.randn(1,10))
 
 
+###############################################
+## At this point, we covered:
+    # Defining a neural network
+    # Processing inputs and calling backward
+## Still Left:
+    # Computing the loss
+    # Updating the weights of the network
 
+# LOSS FUNCTION
+# A loss function takes the (output, target) pair of inputs, computes a value that estimates how
+# how far away the output is from the target
+
+output = net(input)
+target = torch.arange(1, 11)        # A dummy target for example
+target = target.view(1, -1)         # make it the same shape as output
+criterion = nn.MSELoss()
+
+loss = criterion(output, target)
+print(loss)
+
+# print(loss.backward())
+print(loss.grad_fn)                                                     # MSE loss
+print(loss.grad_fn.next_functions[0][0])                                 # Linear
+print(loss.grad_fn.next_functions[0][0].next_functions[0][0])           # ReLU
+
+#################################################
+# Backprop
+# To backpropagate the error all we have to do is to loss.backward(). You
+# need to clear the existing gradients though, else gradients will be accumulated
+# to existing gradients.
+
+# Now we shall call loss.backward(), and have a look at conv1’s bias gradients
+# before and after the backward.
+
+net.zero_grad()                     # zeros the gradient buffers of all parameters
+
+print('conv1.bias.grad before backward')
+print(net.conv1.bias.grad)
+
+loss.backward()
+
+print('conv1.bias.grad after backward')
+print(net.conv1.bias.grad)
+
+##################################################
+# The only thing left to learn is :
+## Updating the weights of the network
+
+# UPDATE THE WEIGHTS :
+## The simples update rule in practice is the Stochastic Gradient Descent (SGD) :
+## weight = weight - learning_rate * gradient
+learning_rate = 0.01
+for f in net.parameters():
+    f.data.sub_(f.grad.data * learning_rate)
 
 
 
